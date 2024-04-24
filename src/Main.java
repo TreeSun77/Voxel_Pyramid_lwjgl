@@ -1,4 +1,6 @@
+import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
+
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -17,7 +19,8 @@ public class Main {
     private boolean[][][] voxels; // Массив вокселей
 
     // Золотое сечение
-    private static final float GOLDEN_RATIO = 1.61803398875f;
+    private static final double GOLDEN_RATIO = (1 + Math.sqrt(5)) / 2;
+    private static final double PI = Math.PI;
 
     /**
      * Метод запуска приложения.
@@ -26,7 +29,6 @@ public class Main {
         init();
         loop();
 
-        //glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
 
         glfwTerminate();
@@ -49,9 +51,12 @@ public class Main {
             throw new RuntimeException("Failed to create the GLFW window");
         }
 
-        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-                glfwSetWindowShouldClose(window, true);
+        glfwSetKeyCallback(window, new GLFWKeyCallback() {
+            @Override
+            public void invoke(long window, int key, int scancode, int action, int mods) {
+                if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
+                    glfwSetWindowShouldClose(window, true);
+                }
             }
         });
 
@@ -69,15 +74,15 @@ public class Main {
         // Активация матрицы проекции
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        float aspectRatio = (float) WIDTH / HEIGHT;
-        float fov = 45.0f;
-        float zNear = 0.1f;
-        float zFar = 100.0f;
-        float top = (float) Math.tan(Math.toRadians(fov * 0.5)) * zNear;
-        float bottom = -top;
-        float right = top * aspectRatio;
-        float left = -right;
-        glFrustum(left, right, bottom, top, zNear, zFar); // Создаем матрицу проекции с помощью glFrustum
+        double fov = PI / GOLDEN_RATIO; // Используем золотое сечение для определения угла обзора
+        double zNear = 0.1;
+        double zFar = 100.0;
+        double aspectRatio = (double) WIDTH / HEIGHT;
+        double top = Math.tan(fov / 2) * zNear;
+        double bottom = -top;
+        double left = aspectRatio * bottom;
+        double right = aspectRatio * top;
+        glFrustum(left, right, bottom, top, zNear, zFar); // Создаем матрицу проекции с использованием золотого сечения
         glMatrixMode(GL_MODELVIEW); // Возвращаемся к матрице модели
 
         // Создаем воксельную пирамиду
@@ -199,10 +204,7 @@ public class Main {
         glEnd();
     }
 
-    /**
-     * Точка входа в приложение.
-     * @param args Аргументы командной строки.
-     */
+
     public static void main(String[] args) {
         new Main().run();
     }
