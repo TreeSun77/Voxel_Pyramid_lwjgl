@@ -33,7 +33,7 @@ public class Main {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Rainbow Rotating Pyramid", NULL, NULL);
+        window = glfwCreateWindow(WIDTH, HEIGHT, "Voxel Pyramid", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
@@ -78,7 +78,7 @@ public class Main {
             glTranslatef(0.0f, 0.0f, -5.0f);
             glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
-            drawPyramid();
+            drawVoxelPyramid();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
@@ -90,53 +90,57 @@ public class Main {
         }
     }
 
-    private void drawPyramid() {
-        glBegin(GL_TRIANGLES);
+    private void drawVoxelPyramid() {
+        // Размеры пирамиды
+        float pyramidWidth = 1.0f;
+        float pyramidHeight = 1.0f;
+        float pyramidDepth = 1.0f;
 
-        // Основание пирамиды (квадрат)
-        glColor3f(1.0f, 0.0f, 0.0f); // Красный
-        glVertex3f(-0.5f, 0.0f, -0.5f);  // Левая нижняя вершина
-        glColor3f(0.0f, 1.0f, 0.0f); // Зеленый
-        glVertex3f(0.5f, 0.0f, -0.5f);   // Правая нижняя вершина
-        glColor3f(0.0f, 0.0f, 1.0f); // Синий
-        glVertex3f(0.5f, 0.0f, 0.5f);    // Правая верхняя вершина
+        // Количество кубов по ширине, высоте и глубине
+        int cubesX = 5;
+        int cubesY = 5;
+        int cubesZ = 5;
 
-        glColor3f(1.0f, 0.0f, 0.0f); // Красный
-        glVertex3f(-0.5f, 0.0f, -0.5f);  // Левая нижняя вершина
-        glColor3f(0.0f, 0.0f, 1.0f); // Синий
-        glVertex3f(0.5f, 0.0f, 0.5f);    // Правая верхняя вершина
-        glColor3f(1.0f, 1.0f, 0.0f); // Желтый
-        glVertex3f(-0.5f, 0.0f, 0.5f);   // Левая верхняя вершина
+        // Расстояние между кубами
+        float spacingX = pyramidWidth / cubesX;
+        float spacingY = pyramidHeight / cubesY;
+        float spacingZ = pyramidDepth / cubesZ;
 
-        // Боковые грани пирамиды
-        glColor3f(1.0f, 0.0f, 1.0f); // Фиолетовый
-        glVertex3f(-0.5f, 0.0f, -0.5f);  // Левая нижняя вершина
-        glColor3f(0.0f, 1.0f, 1.0f); // Бирюзовый
-        glVertex3f(0.0f, 1.0f, 0.0f);    // Вершина пирамиды
-        glColor3f(0.0f, 1.0f, 0.0f); // Зеленый
-        glVertex3f(0.5f, 0.0f, -0.5f);   // Правая нижняя вершина
+        for (int x = 0; x < cubesX; x++) {
+            for (int y = 0; y < cubesY; y++) {
+                for (int z = 0; z < cubesZ; z++) {
+                    float posX = -pyramidWidth / 2 + x * spacingX;
+                    float posY = -pyramidHeight / 2 + y * spacingY;
+                    float posZ = -pyramidDepth / 2 + z * spacingZ;
 
-        glColor3f(1.0f, 0.0f, 1.0f); // Фиолетовый
-        glVertex3f(0.5f, 0.0f, -0.5f);   // Правая нижняя вершина
-        glColor3f(0.0f, 1.0f, 1.0f); // Бирюзовый
-        glVertex3f(0.0f, 1.0f, 0.0f);    // Вершина пирамиды
-        glColor3f(0.0f, 0.0f, 1.0f); // Синий
-        glVertex3f(0.5f, 0.0f, 0.5f);    // Правая верхняя вершина
+                    glColor3f((float) x / cubesX, (float) y / cubesY, (float) z / cubesZ);
+                    drawCube(posX, posY, posZ, spacingX, spacingY, spacingZ);
+                }
+            }
+        }
+    }
 
-        glColor3f(0.0f, 1.0f, 0.0f); // Зеленый
-        glVertex3f(0.5f, 0.0f, 0.5f);    // Правая верхняя вершина
-        glColor3f(1.0f, 1.0f, 0.0f); // Желтый
-        glVertex3f(0.0f, 1.0f, 0.0f);    // Вершина пирамиды
-        glColor3f(1.0f, 0.0f, 0.0f); // Красный
-        glVertex3f(-0.5f, 0.0f, 0.5f);   // Левая верхняя вершина
+    private void drawCube(float x, float y, float z, float width, float height, float depth) {
+        // Верхняя грань
+        drawQuad(x, y + height, z, width, depth);
+        // Нижняя грань
+        drawQuad(x, y, z, width, depth);
+        // Передняя грань
+        drawQuad(x, y, z + depth, width, height);
+        // Задняя грань
+        drawQuad(x, y, z, width, height);
+        // Левая грань
+        drawQuad(x, y, z, depth, height);
+        // Правая грань
+        drawQuad(x + width, y, z, depth, height);
+    }
 
-        glColor3f(0.0f, 1.0f, 0.0f); // Зеленый
-        glVertex3f(-0.5f, 0.0f, 0.5f);   // Левая верхняя вершина
-        glColor3f(1.0f, 0.0f, 1.0f); // Фиолетовый
-        glVertex3f(-0.5f, 0.0f, -0.5f);  // Левая нижняя вершина
-        glColor3f(0.0f, 1.0f, 1.0f); // Бирюзовый
-        glVertex3f(0.0f, 1.0f, 0.0f);    // Вершина пирамиды
-
+    private void drawQuad(float x, float y, float z, float width, float height) {
+        glBegin(GL_QUADS);
+        glVertex3f(x, y, z);
+        glVertex3f(x + width, y, z);
+        glVertex3f(x + width, y + height, z);
+        glVertex3f(x, y + height, z);
         glEnd();
     }
 
