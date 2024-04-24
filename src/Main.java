@@ -1,11 +1,11 @@
-import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
-
-import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
+/**
+ * Главный класс приложения для отображения воксельной пирамиды.
+ */
 public class Main {
 
     private static final int WIDTH = 800;
@@ -16,16 +16,25 @@ public class Main {
 
     private boolean[][][] voxels; // Массив вокселей
 
+    // Золотое сечение
+    private static final float GOLDEN_RATIO = 1.61803398875f;
+
+    /**
+     * Метод запуска приложения.
+     */
     public void run() {
         init();
         loop();
 
-        glfwFreeCallbacks(window);
+        //glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
 
         glfwTerminate();
     }
 
+    /**
+     * Инициализация GLFW и OpenGL.
+     */
     private void init() {
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
@@ -75,6 +84,9 @@ public class Main {
         createVoxelPyramid();
     }
 
+    /**
+     * Основной игровой цикл.
+     */
     private void loop() {
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -95,40 +107,48 @@ public class Main {
         }
     }
 
+    /**
+     * Создание воксельной пирамиды.
+     */
     private void createVoxelPyramid() {
-        // Размеры пирамиды
-        int pyramidSize = 5;
+        // Базовый размер пирамиды
+        int baseSize = 5;
+
+        // Высота пирамиды с использованием золотого сечения
+        int height = (int) (baseSize * GOLDEN_RATIO);
 
         // Инициализируем массив вокселей
-        voxels = new boolean[pyramidSize][pyramidSize][pyramidSize];
+        voxels = new boolean[baseSize][height][baseSize];
 
         // Заполняем массив вокселей для создания пирамиды
-        for (int y = 0; y < pyramidSize; y++) {
-            for (int x = 0; x <= y; x++) {
-                for (int z = 0; z <= y; z++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < baseSize - y / 2; x++) {
+                for (int z = 0; z < baseSize - y / 2; z++) {
                     voxels[x][y][z] = true;
-                    voxels[y][x][z] = true;
-                    voxels[x][y][y] = true;
-                    voxels[y][x][y] = true;
                 }
             }
         }
     }
 
+    /**
+     * Отрисовка воксельной пирамиды.
+     */
     private void drawVoxelPyramid() {
         // Размеры вокселя
-        float voxelSize = 0.5f;
+        float voxelSize = 0.4f;
+        int baseSize = voxels.length;
+        int height = voxels[0].length;
 
         // Отрисовка вокселей
-        for (int x = 0; x < voxels.length; x++) {
-            for (int y = 0; y < voxels[x].length; y++) {
-                for (int z = 0; z < voxels[x][y].length; z++) {
+        for (int x = 0; x < baseSize; x++) {
+            for (int y = 0; y < height; y++) {
+                for (int z = 0; z < baseSize; z++) {
                     if (voxels[x][y][z]) {
-                        float posX = x * voxelSize - (voxels.length - 1) * voxelSize / 2;
-                        float posY = y * voxelSize - (voxels[x].length - 1) * voxelSize / 2;
-                        float posZ = z * voxelSize - (voxels[x][y].length - 1) * voxelSize / 2;
+                        float posX = x * voxelSize - (baseSize - 1) * voxelSize / 2;
+                        float posY = y * voxelSize - (height - 1) * voxelSize / 2;
+                        float posZ = z * voxelSize - (baseSize - 1) * voxelSize / 2;
 
-                        glColor3f((float) x / voxels.length, (float) y / voxels[x].length, (float) z / voxels[x][y].length);
+                        glColor3f((float) x / baseSize, (float) y / height, (float) z / baseSize);
                         drawCube(posX, posY, posZ, voxelSize);
                     }
                 }
@@ -136,6 +156,9 @@ public class Main {
         }
     }
 
+    /**
+     * Отрисовка куба.
+     */
     private void drawCube(float x, float y, float z, float size) {
         glBegin(GL_QUADS);
         // Передняя грань
@@ -176,6 +199,10 @@ public class Main {
         glEnd();
     }
 
+    /**
+     * Точка входа в приложение.
+     * @param args Аргументы командной строки.
+     */
     public static void main(String[] args) {
         new Main().run();
     }
