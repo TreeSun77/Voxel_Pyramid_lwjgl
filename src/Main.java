@@ -1,6 +1,7 @@
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
-
+import java.util.ArrayList;
+import java.util.List;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -10,13 +11,17 @@ import static org.lwjgl.system.MemoryUtil.*;
  */
 public class Main {
 
-    private static final int WIDTH = 800;
-    private static final int HEIGHT = 600;
+    private static final int WINDOW_WIDTH = 800; // Ширина окна
+    private static final int WINDOW_HEIGHT = 600; // Высота окна
+    private static final double Z_NEAR = 0.1; // Ближняя плоскость отсечения
+    private static final double Z_FAR = 100.0; // Дальняя плоскость отсечения
+    private static final int SPHERICAL_SLICES = 16; // Количество сегментов вдоль долготы
+    private static final int SPHERICAL_STACKS = 16; // Количество сегментов вдоль широты
 
-    private long window;
-    private float angle = 0.0f;
+    private long window; // Идентификатор окна
+    private float angle = 0.0f; // Угол вращения
 
-    private boolean[][][] voxels; // Массив вокселей
+    private List<Coordinate> voxels; // Список координат вокселей
 
     // Золотое сечение
     private static final double GOLDEN_RATIO = (1 + Math.sqrt(5)) / 2;
@@ -26,66 +31,74 @@ public class Main {
      * Метод запуска приложения.
      */
     public void run() {
-        init();
-        loop();
+        init(); // Инициализация
+        loop(); // Основной игровой цикл
 
-        glfwDestroyWindow(window);
-
-        glfwTerminate();
+        glfwDestroyWindow(window); // Уничтожение окна
+        glfwTerminate(); // Завершение работы GLFW
     }
 
     /**
      * Инициализация GLFW и OpenGL.
      */
     private void init() {
+        // Инициализация GLFW
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
 
+        // Установка параметров окна GLFW
         glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // Окно не видимо при создании
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // Окно можно изменять по размеру
 
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Voxel Pyramid", NULL, NULL);
+        // Создание окна
+        window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Voxel Pyramid", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
 
-        glfwSetKeyCallback(window, new GLFWKeyCallback() {
+        // Установка обработчика нажатия клавиш
+        try (GLFWKeyCallback keyCallback = new GLFWKeyCallback() {
             @Override
             public void invoke(long window, int key, int scancode, int action, int mods) {
                 if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-                    glfwSetWindowShouldClose(window, true);
+                    glfwSetWindowShouldClose(window, true); // Закрытие окна при нажатии Escape
                 }
             }
-        });
+        }) {
+            glfwSetKeyCallback(window, keyCallback);
+        }
 
+        // Создание контекста OpenGL и отображение окна
         glfwMakeContextCurrent(window);
-        glfwSwapInterval(1);
+        glfwSwapInterval(1); // Включение вертикальной синхронизации
         glfwShowWindow(window);
 
+        // Загрузка OpenGL функций
         GL.createCapabilities();
 
+        // Очистка экрана в черный цвет
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
+        // Включение буфера глубины и цветовых материалов
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_COLOR_MATERIAL);
 
-        // Активация матрицы проекции
+        // Установка матрицы проекции
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        double fov = PI / GOLDEN_RATIO; // Используем золотое сечение для определения угла обзора
-        double zNear = 0.1;
-        double zFar = 100.0;
-        double aspectRatio = (double) WIDTH / HEIGHT;
-        double top = Math.tan(fov / 2) * zNear;
+        double fov = Math.toRadians(90); // Угол обзора в радианах (90 градусов)
+        double aspectRatio = (double) WINDOW_WIDTH / WINDOW_HEIGHT;
+        double top = Math.tan(fov / 2) * Z_NEAR;
         double bottom = -top;
         double left = aspectRatio * bottom;
         double right = aspectRatio * top;
-        glFrustum(left, right, bottom, top, zNear, zFar); // Создаем матрицу проекции с использованием золотого сечения
+        glFrustum(left, right, bottom, top, Z_NEAR, Z_FAR); // Установка матрицы проекции
+
         glMatrixMode(GL_MODELVIEW); // Возвращаемся к матрице модели
 
-        // Создаем воксельную пирамиду
+        // Создание воксельной пирамиды
         createVoxelPyramid();
     }
 
@@ -94,21 +107,27 @@ public class Main {
      */
     private void loop() {
         while (!glfwWindowShouldClose(window)) {
+            // Очистка буфера цвета и глубины
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            // Сброс текущей матрицы
             glLoadIdentity();
+
+            // Перемещение вокруг оси Y и вглубь сцены
             glTranslatef(0.0f, 0.0f, -5.0f);
+
+            // Вращение вокруг оси Y
             glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
+            // Отрисовка воксельной пирамиды
             drawVoxelPyramid();
 
+            // Обмен буферов и обработка событий
             glfwSwapBuffers(window);
             glfwPollEvents();
 
-            angle += 0.5f;
-            if (angle > 360) {
-                angle = 0;
-            }
+            // Увеличение угла вращения
+            angle = (angle + 0.5f) % 360;
         }
     }
 
@@ -116,94 +135,93 @@ public class Main {
      * Создание воксельной пирамиды.
      */
     private void createVoxelPyramid() {
-        // Базовый размер пирамиды
+        // Определение размеров пирамиды
         int baseSize = 5;
-
-        // Высота пирамиды с использованием золотого сечения
         int height = (int) (baseSize * GOLDEN_RATIO);
 
-        // Инициализируем массив вокселей
-        voxels = new boolean[baseSize][height][baseSize];
+        // Инициализация списка координат вокселей
+        voxels = new ArrayList<>();
 
-        // Заполняем массив вокселей для создания пирамиды
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < baseSize - y / 2; x++) {
-                for (int z = 0; z < baseSize - y / 2; z++) {
-                    voxels[x][y][z] = true;
-                }
+        // Рекурсивное добавление координат вокселей
+        createVoxel(0, height, baseSize);
+    }
+
+    /**
+     * Рекурсивное добавление координат вокселей.
+     */
+    private void createVoxel(int y, int maxHeight, int baseSize) {
+        if (y >= maxHeight) {
+            return;
+        }
+        for (int x = 0; x < baseSize - y / 2; x++) {
+            for (int z = 0; z < baseSize - y / 2; z++) {
+                voxels.add(new Coordinate(x, y, z));
             }
         }
+        createVoxel(y + 1, maxHeight, baseSize);
     }
 
     /**
      * Отрисовка воксельной пирамиды.
      */
     private void drawVoxelPyramid() {
-        // Размеры вокселя
+        // Размер вокселя
         float voxelSize = 0.4f;
-        int baseSize = voxels.length;
-        int height = voxels[0].length;
+        int baseSize = 5;
+        int height = (int) (baseSize * GOLDEN_RATIO);
 
         // Отрисовка вокселей
-        for (int x = 0; x < baseSize; x++) {
-            for (int y = 0; y < height; y++) {
-                for (int z = 0; z < baseSize; z++) {
-                    if (voxels[x][y][z]) {
-                        float posX = x * voxelSize - (baseSize - 1) * voxelSize / 2;
-                        float posY = y * voxelSize - (height - 1) * voxelSize / 2;
-                        float posZ = z * voxelSize - (baseSize - 1) * voxelSize / 2;
+        for (Coordinate voxel : voxels) {
+            float posX = voxel.x * voxelSize - (baseSize - 1) * voxelSize / 2;
+            float posY = voxel.y * voxelSize - (height - 1) * voxelSize / 2;
+            float posZ = voxel.z * voxelSize - (baseSize - 1) * voxelSize / 2;
 
-                        glColor3f((float) x / baseSize, (float) y / height, (float) z / baseSize);
-                        drawCube(posX, posY, posZ, voxelSize);
-                    }
-                }
-            }
+            glColor3f((float) voxel.x / baseSize, (float) voxel.y / height, (float) voxel.z / baseSize);
+            drawSphere(posX, posY, posZ, voxelSize / 2);
         }
     }
 
     /**
-     * Отрисовка куба.
+     * Отрисовка сферы.
      */
-    private void drawCube(float x, float y, float z, float size) {
-        glBegin(GL_QUADS);
-        // Передняя грань
-        glVertex3f(x, y, z);
-        glVertex3f(x + size, y, z);
-        glVertex3f(x + size, y + size, z);
-        glVertex3f(x, y + size, z);
+    private void drawSphere(float x, float y, float z, float radius) {
+        for (int i = 0; i < SPHERICAL_SLICES; i++) {
+            double theta0 = 2 * PI * ((double) i / SPHERICAL_SLICES);
+            double theta1 = 2 * PI * ((double) (i + 1) / SPHERICAL_SLICES);
 
-        // Задняя грань
-        glVertex3f(x, y, z + size);
-        glVertex3f(x + size, y, z + size);
-        glVertex3f(x + size, y + size, z + size);
-        glVertex3f(x, y + size, z + size);
+            glBegin(GL_QUAD_STRIP);
+            for (int j = 0; j <= SPHERICAL_STACKS; j++) {
+                double phi = PI * (-0.5 + (double) j / SPHERICAL_STACKS);
+                double cosPhi = Math.cos(phi);
+                double sinPhi = Math.sin(phi);
 
-        // Верхняя грань
-        glVertex3f(x, y + size, z);
-        glVertex3f(x + size, y + size, z);
-        glVertex3f(x + size, y + size, z + size);
-        glVertex3f(x, y + size, z + size);
+                double x0 = x + radius * Math.cos(theta0) * cosPhi;
+                double y0 = y + radius * Math.sin(theta0) * cosPhi;
+                double z0 = z + radius * sinPhi;
 
-        // Нижняя грань
-        glVertex3f(x, y, z);
-        glVertex3f(x + size, y, z);
-        glVertex3f(x + size, y, z + size);
-        glVertex3f(x, y, z + size);
+                double x1 = x + radius * Math.cos(theta1) * cosPhi;
+                double y1 = y + radius * Math.sin(theta1) * cosPhi;
+                double z1 = z + radius * sinPhi;
 
-        // Левая грань
-        glVertex3f(x, y, z);
-        glVertex3f(x, y, z + size);
-        glVertex3f(x, y + size, z + size);
-        glVertex3f(x, y + size, z);
-
-        // Правая грань
-        glVertex3f(x + size, y, z);
-        glVertex3f(x + size, y, z + size);
-        glVertex3f(x + size, y + size, z + size);
-        glVertex3f(x + size, y + size, z);
-        glEnd();
+                glNormal3d(x0 - x, y0 - y, z0 - z);
+                glVertex3d(x0, y0, z0);
+                glNormal3d(x1 - x, y1 - y, z1 - z);
+                glVertex3d(x1, y1, z1);
+            }
+            glEnd();
+        }
     }
 
+    // Класс для хранения координат вокселя
+    private static class Coordinate {
+        int x, y, z;
+
+        public Coordinate(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    }
 
     public static void main(String[] args) {
         new Main().run();
