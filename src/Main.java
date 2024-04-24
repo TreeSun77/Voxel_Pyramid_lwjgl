@@ -14,6 +14,8 @@ public class Main {
     private long window;
     private float angle = 0.0f;
 
+    private boolean[][][] voxels; // Массив вокселей
+
     public void run() {
         init();
         loop();
@@ -66,8 +68,11 @@ public class Main {
         float bottom = -top;
         float right = top * aspectRatio;
         float left = -right;
-        glFrustum(left, right, bottom, top, zNear, zFar);
+        glFrustum(left, right, bottom, top, zNear, zFar); // Создаем матрицу проекции с помощью glFrustum
         glMatrixMode(GL_MODELVIEW); // Возвращаемся к матрице модели
+
+        // Создаем воксельную пирамиду
+        createVoxelPyramid();
     }
 
     private void loop() {
@@ -90,57 +95,84 @@ public class Main {
         }
     }
 
-    private void drawVoxelPyramid() {
+    private void createVoxelPyramid() {
         // Размеры пирамиды
-        float pyramidWidth = 1.0f;
-        float pyramidHeight = 1.0f;
-        float pyramidDepth = 1.0f;
+        int pyramidSize = 5;
 
-        // Количество кубов по ширине, высоте и глубине
-        int cubesX = 5;
-        int cubesY = 5;
-        int cubesZ = 5;
+        // Инициализируем массив вокселей
+        voxels = new boolean[pyramidSize][pyramidSize][pyramidSize];
 
-        // Расстояние между кубами
-        float spacingX = pyramidWidth / cubesX;
-        float spacingY = pyramidHeight / cubesY;
-        float spacingZ = pyramidDepth / cubesZ;
-
-        for (int x = 0; x < cubesX; x++) {
-            for (int y = 0; y < cubesY; y++) {
-                for (int z = 0; z < cubesZ; z++) {
-                    float posX = -pyramidWidth / 2 + x * spacingX;
-                    float posY = -pyramidHeight / 2 + y * spacingY;
-                    float posZ = -pyramidDepth / 2 + z * spacingZ;
-
-                    glColor3f((float) x / cubesX, (float) y / cubesY, (float) z / cubesZ);
-                    drawCube(posX, posY, posZ, spacingX, spacingY, spacingZ);
+        // Заполняем массив вокселей для создания пирамиды
+        for (int y = 0; y < pyramidSize; y++) {
+            for (int x = 0; x <= y; x++) {
+                for (int z = 0; z <= y; z++) {
+                    voxels[x][y][z] = true;
+                    voxels[y][x][z] = true;
+                    voxels[x][y][y] = true;
+                    voxels[y][x][y] = true;
                 }
             }
         }
     }
 
-    private void drawCube(float x, float y, float z, float width, float height, float depth) {
-        // Верхняя грань
-        drawQuad(x, y + height, z, width, depth);
-        // Нижняя грань
-        drawQuad(x, y, z, width, depth);
-        // Передняя грань
-        drawQuad(x, y, z + depth, width, height);
-        // Задняя грань
-        drawQuad(x, y, z, width, height);
-        // Левая грань
-        drawQuad(x, y, z, depth, height);
-        // Правая грань
-        drawQuad(x + width, y, z, depth, height);
+    private void drawVoxelPyramid() {
+        // Размеры вокселя
+        float voxelSize = 0.5f;
+
+        // Отрисовка вокселей
+        for (int x = 0; x < voxels.length; x++) {
+            for (int y = 0; y < voxels[x].length; y++) {
+                for (int z = 0; z < voxels[x][y].length; z++) {
+                    if (voxels[x][y][z]) {
+                        float posX = x * voxelSize - (voxels.length - 1) * voxelSize / 2;
+                        float posY = y * voxelSize - (voxels[x].length - 1) * voxelSize / 2;
+                        float posZ = z * voxelSize - (voxels[x][y].length - 1) * voxelSize / 2;
+
+                        glColor3f((float) x / voxels.length, (float) y / voxels[x].length, (float) z / voxels[x][y].length);
+                        drawCube(posX, posY, posZ, voxelSize);
+                    }
+                }
+            }
+        }
     }
 
-    private void drawQuad(float x, float y, float z, float width, float height) {
+    private void drawCube(float x, float y, float z, float size) {
         glBegin(GL_QUADS);
+        // Передняя грань
         glVertex3f(x, y, z);
-        glVertex3f(x + width, y, z);
-        glVertex3f(x + width, y + height, z);
-        glVertex3f(x, y + height, z);
+        glVertex3f(x + size, y, z);
+        glVertex3f(x + size, y + size, z);
+        glVertex3f(x, y + size, z);
+
+        // Задняя грань
+        glVertex3f(x, y, z + size);
+        glVertex3f(x + size, y, z + size);
+        glVertex3f(x + size, y + size, z + size);
+        glVertex3f(x, y + size, z + size);
+
+        // Верхняя грань
+        glVertex3f(x, y + size, z);
+        glVertex3f(x + size, y + size, z);
+        glVertex3f(x + size, y + size, z + size);
+        glVertex3f(x, y + size, z + size);
+
+        // Нижняя грань
+        glVertex3f(x, y, z);
+        glVertex3f(x + size, y, z);
+        glVertex3f(x + size, y, z + size);
+        glVertex3f(x, y, z + size);
+
+        // Левая грань
+        glVertex3f(x, y, z);
+        glVertex3f(x, y, z + size);
+        glVertex3f(x, y + size, z + size);
+        glVertex3f(x, y + size, z);
+
+        // Правая грань
+        glVertex3f(x + size, y, z);
+        glVertex3f(x + size, y, z + size);
+        glVertex3f(x + size, y + size, z + size);
+        glVertex3f(x + size, y + size, z);
         glEnd();
     }
 
