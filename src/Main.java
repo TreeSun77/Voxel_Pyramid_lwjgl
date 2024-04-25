@@ -133,7 +133,7 @@ public class Main {
 
     // Отрисовка воксельной пирамиды
     private void drawVoxelPyramid() {
-        int baseSize = 5; // Размер основания пирамиды
+        int baseSize = 7; // Размер основания пирамиды
         int height = (int) (baseSize * GOLDEN_RATIO); // Высота пирамиды
 
         for (Coordinate voxel : voxels) { // Перебор координат вокселей
@@ -141,7 +141,7 @@ public class Main {
             float posY = voxel.y * VOXEL_SIZE - (height - 1) * VOXEL_SIZE / 2; // Вычисление позиции по Y
             float posZ = voxel.z * VOXEL_SIZE - (baseSize - 1) * VOXEL_SIZE / 2; // Вычисление позиции по Z
             glColor3f((float) voxel.x / baseSize, (float) voxel.y / height, (float) voxel.z / baseSize); // Установка цвета вокселя
-            drawSphere(posX, posY, posZ, VOXEL_SIZE / 2); // Отрисовка сферы вокселя
+            drawSphere(posX, posY, posZ, VOXEL_SIZE / 1.8f); // Отрисовка сферы вокселя
         }
     }
 

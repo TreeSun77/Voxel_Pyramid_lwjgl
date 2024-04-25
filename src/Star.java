@@ -2,7 +2,6 @@ import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
 
-
 // Класс для представления звезды
 class Star {
     private float x, y, z; // Координаты
