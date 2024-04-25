@@ -3,14 +3,12 @@ import org.lwjgl.opengl.*; // Импорт классов для работы с
 
 import java.util.ArrayList; // Импорт класса ArrayList из пакета java.util
 import java.util.List; // Импорт интерфейса List из пакета java.util
-import java.util.Random; // Импорт класса Random из пакета java.util
 
 import static org.lwjgl.glfw.GLFW.*; // Статический импорт методов из класса GLFW из библиотеки LWJGL
 import static org.lwjgl.opengl.GL11.*; // Статический импорт методов из класса GL11 из библиотеки LWJGL
 import static org.lwjgl.system.MemoryUtil.*; // Статический импорт методов из класса MemoryUtil из библиотеки LWJGL
 
 public class Main {
-
     private static final int WINDOW_WIDTH = 800; // Ширина окна
     private static final int WINDOW_HEIGHT = 600; // Высота окна
     private static final double Z_NEAR = 0.1; // Ближняя плоскость отсечения
@@ -112,7 +110,7 @@ public class Main {
 
     // Создание воксельной пирамиды
     private void createVoxelPyramid() {
-        int baseSize = 5; // Размер основания пирамиды
+        int baseSize = 7; // Размер основания пирамиды
         int height = (int) (baseSize * GOLDEN_RATIO); // Высота пирамиды
         voxels = new ArrayList<>(); // Инициализация списка координат вокселей
         createVoxel(0, height, baseSize); // Создание воксельной пирамиды
@@ -175,7 +173,7 @@ public class Main {
 
     // Генерация звезд
     private void generateStars() {
-        int numStars = 1300; // Количество звезд
+        int numStars = 888; // Количество звезд
         for (int i = 0; i < numStars; i++) { // Перебор звезд
             stars.add(Star.generateRandomStar()); // Добавление случайно сгенерированной звезды
         }
@@ -213,67 +211,4 @@ public class Main {
     }
 }
 
-// Класс для представления звезды
-class Star {
-    private float x, y, z; // Координаты
-    private float size; // Размер
-    private float brightness; // Яркость
-    private float red, green, blue; // Цвет
-    private static final Random random = new Random(); // Генератор случайных чисел
-    private float pulsationRange; // Диапазон пульсации
 
-    // Конструктор
-    public Star(float x, float y, float z, float size, float brightness, float red, float green, float blue) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.size = size;
-        this.brightness = brightness;
-        this.red = red;
-        this.green = green;
-        this.blue = blue;
-        this.pulsationRange = random.nextFloat() * 0.2f + 0.1f; // Генерация диапазона пульсации
-    }
-
-    // Генерация случайной звезды
-    public static Star generateRandomStar() {
-        float x = random.nextFloat() * 20 - 10; // Случайная координата X
-        float y = random.nextFloat() * 20 - 10; // Случайная координата Y
-        float z = random.nextFloat() * 20 - 10; // Случайная координата Z
-        float size = random.nextFloat() * 2 + 1; // Случайный размер
-        float brightness = random.nextFloat(); // Случайная яркость
-        float red = random.nextFloat(); // Случайный красный цвет
-        float green = random.nextFloat(); // Случайный зеленый цвет
-        float blue = random.nextFloat(); // Случайный синий цвет
-        return new Star(x, y, z, size, brightness, red, green, blue); // Возвращается новый объект звезды
-    }
-
-    // Отрисовка звезды
-    public void draw() {
-        glColor4f(red, green, blue, brightness); // Установка цвета и яркости
-        glBegin(GL_POINTS); // Начало определения точки
-        glVertex3f(x, y, z); // Установка координаты точки
-        glEnd(); // Завершение определения точки
-    }
-
-    // Обновление состояния звезды
-    public void update() {
-        float deltaBrightness = random.nextFloat() * pulsationRange * 2 - pulsationRange; // Изменение яркости
-        brightness += deltaBrightness; // Обновление яркости
-        brightness = Math.min(1.0f, Math.max(0.0f, brightness)); // Ограничение яркости от 0 до 1
-
-        float deltaSize = random.nextFloat() * pulsationRange * 0.5f - pulsationRange * 0.25f; // Изменение размера
-        size += deltaSize; // Обновление размера
-        size = Math.min(3.0f, Math.max(1.0f, size)); // Ограничение размера от 1 до 3
-
-        x += random.nextFloat() * 0.01f - 0.005f; // Изменение координаты X
-        y += random.nextFloat() * 0.01f - 0.005f; // Изменение координаты Y
-        z += random.nextFloat() * 0.01f - 0.005f; // Изменение координаты Z
-        if (x < -10) x = 10; // Проверка и коррекция координаты X
-        if (x > 10) x = -10; // Проверка и коррекция координаты X
-        if (y < -10) y = 10; // Проверка и коррекция координаты Y
-        if (y > 10) y = -10; // Проверка и коррекция координаты Y
-        if (z < -10) z = 10; // Проверка и коррекция координаты Z
-        if (z > 10) z = -10; // Проверка и коррекция координаты Z
-    }
-}
